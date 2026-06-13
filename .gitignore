@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+
+# runtime audit logs — keep the directory (logs/.gitkeep), not the contents
+logs/*.jsonl

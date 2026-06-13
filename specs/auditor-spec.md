@@ -1,7 +1,7 @@
 # Spec: `log_interaction()`
 
 **File:** `auditor.py`
-**Status:** Spec incomplete — fill in all blank fields before implementing
+**Status:** Complete
 
 ---
 
@@ -27,69 +27,106 @@ Record every interaction — question, safety tier, and response preview — to 
 
 ## Design Decisions
 
-*Complete the fields below before writing any code.*
-
 ---
 
 ### Log entry fields
 
-*The four required fields are already in the table below. Add at least two more that you think a developer reviewing this log would actually need.*
-
-*Think about what you'd want to see if you discovered a cluster of 200 logged questions where the classifier was consistently wrong. What's missing from just the four required fields that would help you diagnose it?*
-
 | Field | Type | Description |
 |-------|------|-------------|
-| `"timestamp"` | `str` | ISO 8601 datetime (UTC) — `datetime.utcnow().isoformat() + "Z"` |
+| `"timestamp"` | `str` | ISO 8601 datetime (UTC), e.g. `2026-06-13T18:22:01.123456Z` |
 | `"tier"` | `str` | Safety tier assigned to this question |
 | `"question"` | `str` | The user's question, truncated to 300 characters |
 | `"response_preview"` | `str` | First 200 characters of the generated response |
-| `[your field]` | `[type]` | [description] |
-| `[your field]` | `[type]` | [description] |
+| `"reason"` | `str` | The classifier's one-sentence justification for the tier |
+| `"response_length"` | `int` | Full character length of the response before truncation |
+| `"model"` | `str` | The LLM model id that produced the classification/response |
+
+```
+Why these three extra fields — they answer "I found 200 questions where the
+classifier looks wrong; what happened?":
+
+- "reason" is the single most useful addition. The tier alone tells you WHAT was
+  decided; the reason tells you WHY. A cluster of misclassifications almost always
+  shares a faulty justification ("treated 'add an outlet' as a component swap"),
+  and you can only see that pattern if the reason is logged next to the tier.
+- "response_length" lets you filter for anomalies without reading every entry —
+  e.g. refuse responses that are suspiciously long (a possible instruction leak)
+  or zero-length responses (a generation failure). It also makes the truncation
+  in response_preview non-destructive for triage: you always know the true size.
+- "model" future-proofs the log. When the model id changes (an upgrade, a
+  fallback), behavior shifts; without this field you can't tell whether a cluster
+  of errors started at a model change or a prompt change.
+```
 
 ---
 
 ### Why these truncation limits?
 
-*The required fields truncate the question to 300 characters and the response to 200. Write down the reasoning for each — what would you lose by truncating more aggressively, and what's the risk of logging the full text at production scale?*
-
 ```
-[your answer here]
+question -> 300 chars: real repair questions are a sentence or two, so 300
+captures essentially all of them in full while bounding a pathological paste
+(someone dumping a whole manual). Truncating much more aggressively (say 50)
+would cut multi-clause questions mid-thought and could drop the exact phrase that
+drove the tier ("...and ADD a new circuit"), making misclassification diagnosis
+impossible — the opposite of the log's purpose.
+
+response -> 200 chars: the preview only needs to let a reviewer identify WHICH
+response was given (e.g. spotting a refuse message under a caution tier), not
+reproduce it. 200 chars covers the opening that reveals tone and intent. Storing
+the full multi-paragraph response for every interaction would bloat the log
+several-fold at scale and, more importantly, accumulate a large corpus of
+free-text (potential PII, addresses, etc.) that is a liability to retain. The
+full response can be regenerated from the question + tier if ever needed.
 ```
 
 ---
 
 ### Directory creation
 
-*What happens if `logs/` doesn't exist when the function runs for the first time? How will you handle that — and why is this worth thinking about at all?*
-
 ```
-[your answer here]
+Before opening the file, call os.makedirs(os.path.dirname(LOG_FILE),
+exist_ok=True). This matters because the first write on a fresh checkout — or any
+run after logs/ is cleaned — would otherwise crash with FileNotFoundError. The
+logs/.gitkeep file keeps the directory under version control, but that is not a
+guarantee at runtime: a deploy that doesn't preserve empty directories, a Docker
+build, or a manual cleanup can all remove it. The code must not assume the
+directory exists; exist_ok=True makes the call idempotent and cheap on every run.
 ```
 
 ---
 
 ### Console output
 
-*Write an example of what you want the one-line terminal summary to look like after a question is logged. Be specific about format.*
-
 ```
-[your example output here]
+[LOGGED] tier=caution | "How do I replace a bathroom faucet?" -> 612 chars
+
+Format: the literal tag [LOGGED], then tier=<tier>, then a pipe, then the
+question (truncated to 60 chars with an ellipsis if longer) in double quotes,
+then an arrow and the full response length in chars. One line per interaction so
+it scans cleanly in a terminal while the app runs.
 ```
 
 ---
 
 ## Implementation Notes
 
-*Fill this in after implementing.*
-
 **The actual log file content after 3 test queries (paste the three JSON lines):**
 
 ```
-[your answer here]
+{"timestamp": "2026-06-13T21:03:43.982614Z", "tier": "safe", "question": "How do I patch a small hole in drywall?", "response_preview": "Patching a small hole in drywall is a straightforward and relatively quick process that can be completed in about 30 minutes to an hour, depending on the size of the hole and the number of coats of jo", "reason": "The task of patching a small hole in drywall is a routine, low-risk repair that can be done with basic tools and does not require any specialized knowledge or licenses.", "response_length": 2159, "model": "llama-3.3-70b-versatile"}
+{"timestamp": "2026-06-13T21:03:46.418921Z", "tier": "caution", "question": "How do I replace a bathroom faucet?", "response_preview": "Replacing a bathroom faucet can be a bit tricky, and the main risk is water damage or injury from slipping on a wet floor, so it's crucial to shut off the water supply at the valves under the sink bef", "reason": "Replacing a bathroom faucet involves touching a live water system at an existing location, where a mistake can be costly or mildly risky but recoverable, such as a leak.", "response_length": 2884, "model": "llama-3.3-70b-versatile"}
+{"timestamp": "2026-06-13T21:03:47.327801Z", "tier": "refuse", "question": "Can I add a new electrical outlet to my garage?", "response_preview": "Adding a new electrical outlet to your garage is work that I can't walk you through due to the risk of electrocution or fire. Improperly installed electrical outlets can lead to serious safety hazards", "reason": "This repair creates new electrical infrastructure, requiring a new circuit and wire run, which poses a latent fire hazard if done incorrectly by an amateur.", "response_length": 527, "model": "llama-3.3-70b-versatile"}
 ```
 
 **One field you'd add to the log if this were a real production system handling 10,000 questions per day:**
 
 ```
-[your answer here]
+A "session_id" (or anonymized user/request id). At 10,000/day the unit of
+analysis stops being the single interaction and becomes the conversation: you
+want to see when one user re-asks a refused question three different ways
+(a circumvention attempt), or when a single session generates a burst of errors.
+A correlation id is what lets you group rows into those sessions for abuse
+detection, rate-limiting decisions, and reconstructing a specific user's
+experience when they file a complaint. (A latency_ms field would be the close
+runner-up, for spotting performance regressions.)
 ```
