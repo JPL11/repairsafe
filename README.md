@@ -94,7 +94,7 @@ Opens the Gradio UI: ask a repair question and watch the safety tier and a tier-
 ## Project Structure
 
 ```
-ai201-lab4-repairsafe-starter/
+repairsafe/
 ├── app.py                   # Gradio UI + pipeline orchestration, with the legal-tier badge
 ├── safety.py                # M1: LLM-as-judge classifier (4 tiers)
 ├── responder.py             # M2: tier-specific response generation
