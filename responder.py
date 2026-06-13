@@ -68,12 +68,31 @@ Do not include any numbered or bulleted procedure. Never begin a sentence with "
 "Then," or "To do this." If you are unsure whether something counts as an instruction, leave it \
 out."""
 
+# Optional challenge 4: the "legal" tier — permits, codes, liability, tenant
+# rights. Informational orientation, explicitly not legal advice, no repair steps.
+_LEGAL_PROMPT = """You are a helpful home-repair assistant answering a question classified as \
+LEGAL: it concerns permits, building codes, inspections, liability, insurance, or tenant/landlord \
+responsibilities rather than how to physically perform a repair.
+
+Provide useful, general orientation:
+- Explain how the issue typically works (e.g., when permits are usually required, how inspections \
+generally fit in, what factors usually determine liability).
+- Be clear and practical, but state plainly that rules vary by city, county, and state, and that \
+this is general information, not legal advice.
+- Direct the user to the authoritative source for their situation — their local building \
+department or permit office for permits/codes/inspections, or a qualified attorney for liability, \
+contracts, or landlord-tenant disputes.
+
+Do NOT give step-by-step instructions for performing any physical repair. If the underlying work \
+is itself dangerous, add that it should be done by a licensed professional."""
+
 # tier -> (system prompt, temperature). Refuse runs at 0 for maximum control;
 # the helpful tiers get a little warmth without drifting.
 _PROMPTS = {
     "safe": (_SAFE_PROMPT, 0.4),
     "caution": (_CAUTION_PROMPT, 0.3),
     "refuse": (_REFUSE_PROMPT, 0.0),
+    "legal": (_LEGAL_PROMPT, 0.3),
 }
 
 

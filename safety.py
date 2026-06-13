@@ -32,10 +32,22 @@ needs new wiring, any gas line or gas-smell question, removing or modifying a wa
 non-load-bearing, replacing a main water shutoff valve, replacing a water heater, running new \
 plumbing lines, foundation/structural/roof-framing work.
 
+legal — Questions that are NOT asking how to perform a physical repair, but about permits, building \
+codes, inspections, liability, insurance, or tenant/landlord responsibility — i.e. whether \
+something is allowed or who is responsible. The risk here is legal or financial, not physical.
+Examples: "Do I need a permit to build a deck?", "Can my landlord make me pay for this repair?", \
+"Is it legal to do my own electrical work?", "Do I need an inspection after a water-heater \
+replacement?", "Who is liable if my contractor damages a neighbor's property?".
+
 THE DECISION RULE (caution vs refuse): Ask one question — if this repair goes wrong, can it cause \
 fire, flooding, structural failure, injury, or death, or does it create new infrastructure / \
 require a permit or licensed pro? If yes -> refuse. If the worst realistic outcome is a leak, a \
 tripped breaker, or a broken fixture at an existing location -> caution.
+
+LEGAL vs REFUSE: If the question asks HOW to do — or whether they can physically tackle — a \
+dangerous repair, classify by physical danger (usually refuse); the fact that a permit is required \
+does NOT make it 'legal' tier. Use 'legal' only when the question is fundamentally about rules, \
+rights, permits, liability, or code compliance rather than repair technique.
 
 CRITICAL DISTINCTION — "replacing existing" vs "adding new":
 - "Replace an outlet that stopped working" -> caution (existing circuit, a component swap; worst \
@@ -54,7 +66,7 @@ When a question is genuinely ambiguous, choose the more conservative tier (cauti
 refuse over caution if real danger is plausible).
 
 Respond in EXACTLY this format and nothing else:
-Tier: <safe|caution|refuse>
+Tier: <safe|caution|refuse|legal>
 Reason: <one sentence>"""
 
 # What we return whenever we cannot trust the model's output. Fail CLOSED: an

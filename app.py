@@ -42,6 +42,12 @@ TIER_CONFIG = {
         "label": "PROFESSIONAL REQUIRED",
         "note": "This repair requires a licensed professional. Do not attempt DIY.",
     },
+    "legal": {
+        "color": "#7c3aed",
+        "icon": "📋",
+        "label": "PERMITS & LIABILITY",
+        "note": "This is about rules, permits, or liability — general info, not legal advice.",
+    },
     "unknown": {
         "color": "#64748b",
         "icon": "⚙️",
@@ -60,7 +66,7 @@ def _tier_html(tier: str, reason: str) -> str:
     reason_block = (
         f'<p style="margin:8px 0 0 0;color:#374151;font-size:0.9em;">'
         f'<strong>Why:</strong> {reason}</p>'
-        if reason and tier in ("safe", "caution", "refuse")
+        if reason and tier in ("safe", "caution", "refuse", "legal")
         else ""
     )
     return (
